@@ -22,7 +22,7 @@ In-Game Commands:
 @trade [SysID] [Ship] [Ship]        -           Trade a Ship (first) from your fleet in system #SysID for a new Ship (second) with the stash.
 @drop [SysID] [Ship]                -           Sacrifice one of your own Ships to get multiple actions according to its size.
 @cata [SysID]                       -           Check a star system for overpopulations and trigger catastrophes on them.
-@waive                              -           Waive and pass the turn to the next player. Usefull if you can not use all of your sacrifice actions.
+@waive                              -           Waive and pass the turn to the next player. Useful if you can not use all of your sacrifice actions.
 
 Legend:
 
