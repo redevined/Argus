@@ -7,8 +7,8 @@ General Commands:
 
 @help                               -           Print this help.
 @start [Star] [Star] [Ship]         -           Join a new game with two Stars and a starter Ship. If you are the second player joining the game, the game starts afterwards.
-@save [Name]                        -           Save the current game under a specific name. (Feature currently not available)
-@load [Name]                        -           Load a previously saved game. (Feature currently not available)
+@save [Name]                        -           Save the current game under a specific name.
+@load [Name]                        -           Load a previously saved game.
 @quit                               -           Leave the current game. The game will be resetted.
 @debug                              -           Enter the debug mode. This lets you see and manipulate all variables of the game.
 
@@ -22,7 +22,7 @@ In-Game Commands:
 @trade [SysID] [Ship] [Ship]        -           Trade a Ship (first) from your fleet in system #SysID for a new Ship (second) with the stash.
 @drop [SysID] [Ship]                -           Sacrifice one of your own Ships to get multiple actions according to its size.
 @cata [SysID]                       -           Check a star system for overpopulations and trigger catastrophes on them.
-@waive                              -           Waive and pass the turn to the next player. Usefull if you can not use all of your sacrifice actions.
+@waive                              -           Waive and pass the turn to the next player. Useful if you can not use all of your sacrifice actions.
 
 Legend:
 

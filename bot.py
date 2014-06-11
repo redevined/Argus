@@ -77,11 +77,21 @@ def stash(*args) :
     
     
 def save(player, data) :
-    send("This feature is not available yet!")
+    savefile = open(os.path.join("saves/" + data[0] + ".save"), "w")
+    variables = vars(game)
+    for var in variables :
+        savefile.write("game.{} = {}\n".format(var, variables[var]))
+    savefile.close()
        
        
 def load(player, data) :
-    send("This feature is not available yet!")
+    try :
+        savefile = open(os.path.join("saves/" + data[0] + ".save"), "r")
+        for setting in savefile :
+            exec(setting)
+        savefile.close()
+    except IOError :
+        error("There are no saved games with this name")
 
 
 def quit(player, data) :
