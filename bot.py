@@ -83,7 +83,7 @@ def save(player, data) :
     variables = vars(game)
     for var in variables :
         # Show variable as string in the savefile if it is a string
-        if type(var) == type("str") :
+        if type(variables[var]) == type("str") :
             line = "game.{} = '{}'\n"
         else :
             line = "game.{} = {}\n"

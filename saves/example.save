@@ -1,0 +1,12 @@
+game.executable = ('r', 'g', 'b', 'y', 'x')
+game.actioncounter = 1
+game.run = False
+game.sizes = (1, 2, 3)
+game.universe = []
+game.winner = []
+game.stash = [[5, 5, 5], [5, 5, 5], [5, 5, 5], [5, 5, 5]]
+game.error_bag = []
+game.players = {}
+game.colors = ('r', 'g', 'b', 'y')
+game.send_bag = []
+game.stashsize = 5
