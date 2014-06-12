@@ -13,8 +13,8 @@ Argus is an IRC Bot for playing Homeworlds.
 
 * `@help` - Print this help.
 * `@start [Star] [Star] [Ship]` - Join a new game with two _Stars_ and a starter _Ship_. If you are the second player joining the game, the game starts afterwards.
-* `@save [Name]` - Save the current game under a specific name. (Feature currently not available)
-* `@load [Name]` - Load a previously saved game. (Feature currently not available)
+* `@save [Name]` - Save the current game under a specific name.
+* `@load [Name]` - Load a previously saved game.
 * `@quit` - Leave the current game. The game will be resetted.
 * `@debug` - Enter the debug mode. This lets you see and manipulate all variables of the game.
 
