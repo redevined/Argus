@@ -120,31 +120,34 @@ def quit(player, data) :
 
 
 def debug(*args) :
-    send("Entering debug mode...")
-    # Get and print current variables of the game
-    variables = vars(game)
-    print("Vars of {}\n".format(game))
-    for var in variables :
-        print("game.{} = {}".format(var, variables[var]))
-    print("")
-    debugging = True
-    while debugging :
-        # Let the user input a command
-        try :
-            # Works in Python 2.x
-            cmd = raw_input("debug.mode@" + irc["botnick"] + " >>> ")
-        except NameError :
-            # Works in Python 3.x
-            cmd = input("debug.mode@" + irc["botnick"] + " >>> ")
-        # Execute command
-        if not cmd :
-            debugging = not debugging
-        else :
+    if irc["debug"] :
+        send("Entering debug mode...")
+        # Get and print current variables of the game
+        variables = vars(game)
+        print("Vars of {}\n".format(game))
+        for var in variables :
+            print("game.{} = {}".format(var, variables[var]))
+        print("")
+        debugging = True
+        while debugging :
+            # Let the user input a command
             try :
-                exec(cmd)
-            except Exception as fail:
-                print(fail)
-    send("Debug mode closed.")
+                # Works in Python 2.x
+                cmd = raw_input("debug.mode@" + irc["botnick"] + " >>> ")
+            except NameError :
+                # Works in Python 3.x
+                cmd = input("debug.mode@" + irc["botnick"] + " >>> ")
+            # Execute command
+            if not cmd :
+                debugging = not debugging
+            else :
+                try :
+                    exec(cmd)
+                except Exception as fail:
+                    print(fail)
+        send("Debug mode closed.")
+    else :
+        error("Use the --debug flag to enable the use of the debug mode")
 
 
 
@@ -156,21 +159,21 @@ def ping() :
         ircsock.send("PONG :Pong\n".encode(encoding="UTF-8"))
 
 
-def send(msg) :
+def send(msg, chan = irc["channel"]) :
     try :
-        ircsock.send("PRIVMSG {} :\x0310{}\x03\n".format(irc["channel"], msg))
+        ircsock.send("PRIVMSG {} :\x0310{}\x03\n".format(chan, msg))
     except TypeError :
-        ircsock.send("PRIVMSG {} :\x0310{}\x03\n".format(irc["channel"], msg).encode(encoding="UTF-8"))
+        ircsock.send("PRIVMSG {} :\x0310{}\x03\n".format(chan, msg).encode(encoding="UTF-8"))
 
 
-def error(msg) :
+def error(msg, chan = irc["channel"]) :
     try :
-        ircsock.send("PRIVMSG {} :\x02\x0305ERROR: {}\x03\x02\n".format(irc["channel"], msg))
+        ircsock.send("PRIVMSG {} :\x02\x0305ERROR: {}\x03\x02\n".format(chan, msg))
     except TypeError :
-        ircsock.send("PRIVMSG {} :\x02\x0305ERROR: {}\x03\x02\n".format(irc["channel"], msg).encode(encoding="UTF-8"))
+        ircsock.send("PRIVMSG {} :\x02\x0305ERROR: {}\x03\x02\n".format(chan, msg).encode(encoding="UTF-8"))
 
 
-def join(chan) :
+def join(chan = irc["channel"]) :
     try :
         ircsock.send("JOIN {}\n".format(chan))
     except TypeError :
@@ -188,6 +191,7 @@ def argumentor() :
     parser.add_argument("-c", "--channel", help = "Specify the channel the bot will join", default = "#homeworlds")
     parser.add_argument("-n", "--botnick", help = "Choose a nickname for the bot", default = "Argus")
     parser.add_argument("-i", "--indicator", help = "Set a character the bot will listen to", default = "@")
+    parser.add_argument("--debug", help = "Enables debugging mode and shows messages from the IRC server", action = "store_true")
     
     # Parse arguments
     args = parser.parse_args()
@@ -231,7 +235,9 @@ while True :
 
     # Receive messages and remove unnecessary \n
     ircmsg = ircsock.recv(2048).decode(encoding="UTF-8").strip('\n\r')
-    print(ircmsg)
+    
+    if irc["debug"] :
+        print(ircmsg)
     
     # Reply if the server pings you
     if ircmsg.find("PING :") != -1 :

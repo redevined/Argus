@@ -4,7 +4,7 @@
 Argus is an IRC Bot for playing Homeworlds.
 
 > Start Argus like this:  
->`python bot.py [-h] [-s SERVER] [-p PORT] [-c CHANNEL] [-n BOTNICK] [-i INDICATOR]`
+>`python bot.py [-h] [-s SERVER] [-p PORT] [-c CHANNEL] [-n BOTNICK] [-i INDICATOR] [--debug]`
 
 > Use `python bot.py --help` for additional info on starting the Homeworlds Bot.
 
