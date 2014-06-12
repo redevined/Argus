@@ -1,8 +1,3 @@
-Command-line Flags:
-
-python bot.py [-h] [-s SERVER] [-p PORT] [-c CHANNEL] [-n BOTNICK] [-i INDICATOR]
-Type 'python bot.py --help' for additional help on the parameters.
-
 General Commands:
 
 @help                               -           Print this help.
@@ -24,9 +19,4 @@ In-Game Commands:
 @cata [SysID]                       -           Check a star system for overpopulations and trigger catastrophes on them.
 @waive                              -           Waive and pass the turn to the next player. Useful if you can not use all of your sacrifice actions.
 
-Legend:
-
-@:      Indicator character. Use this to send commands to the bot.
-SysID:  Integer number of the star system in which you like to perform the action, staring from 0.
-Ship:   Representation consists of Size+Color, therefore [123][rgby], e.g. '3r' would be a large red ship.
-Star:   The representation of stars is the same like Ships.
+Please read the README.md for further details.
