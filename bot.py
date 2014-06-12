@@ -77,19 +77,39 @@ def stash(*args) :
     
     
 def save(player, data) :
+    # Create a savefile in the directory saves/ with 'name'.save
     savefile = open(os.path.join("saves/" + data[0] + ".save"), "w")
+    # Get the current variables of the game
     variables = vars(game)
     for var in variables :
-        savefile.write("game.{} = {}\n".format(var, variables[var]))
+        # Show variable as string in the savefile if it is a string
+        if type(var) == type("str") :
+            line = "game.{} = '{}'\n"
+        else :
+            line = "game.{} = {}\n"
+        try :
+            # Works in Python 2.x
+            savefile.write(line.format(var, variables[var]))
+        except TypeError :
+            # Works in Python 3.x
+            savefile.write(line.format(var, variables[var]).encode(encoding="UTF-8"))
     savefile.close()
+    send("Game saved.")
        
        
 def load(player, data) :
     try :
+        # Open savefile 'name'.save
         savefile = open(os.path.join("saves/" + data[0] + ".save"), "r")
+        game.__init__()
         for setting in savefile :
-            exec(setting)
+            # Set all variables of the game to the variables in the file
+            try :
+                exec(setting)
+            except Exception :
+                error("Corrupt file")
         savefile.close()
+        send("Game loaded, {} it's your turn.".format(variables["turn"]))
     except IOError :
         error("There are no saved games with this name")
 
@@ -101,41 +121,60 @@ def quit(player, data) :
 
 def debug(*args) :
     send("Entering debug mode...")
+    # Get and print current variables of the game
     variables = vars(game)
-    print("Vars of {}".format(game))
-    print
+    print("Vars of {}\n".format(game))
     for var in variables :
         print("game.{} = {}".format(var, variables[var]))
-    print
-    
+    print("")
     debugging = True
     while debugging :
-        cmd = raw_input("debug.mode@" + irc["botnick"] + " >>> ")
+        # Let the user input a command
+        try :
+            # Works in Python 2.x
+            cmd = raw_input("debug.mode@" + irc["botnick"] + " >>> ")
+        except NameError :
+            # Works in Python 3.x
+            cmd = input("debug.mode@" + irc["botnick"] + " >>> ")
+        # Execute command
         if not cmd :
             debugging = not debugging
         else :
             try :
                 exec(cmd)
-            except Exception :
-                print(Exception)
+            except Exception as fail:
+                print(fail)
+    send("Debug mode closed.")
 
 
 
 # Functions for basic IRC actions
 def ping() :
-    ircsock.send("PONG :Pong\n")
+    try :
+        ircsock.send("PONG :Pong\n")
+    except TypeError :
+        ircsock.send("PONG :Pong\n".encode(encoding="UTF-8"))
 
 
 def send(msg) :
-    ircsock.send("PRIVMSG {} :\x0310{}\x03\n".format(irc["channel"], msg))
+    try :
+        ircsock.send("PRIVMSG {} :\x0310{}\x03\n".format(irc["channel"], msg))
+    except TypeError :
+        ircsock.send("PRIVMSG {} :\x0310{}\x03\n".format(irc["channel"], msg).encode(encoding="UTF-8"))
 
 
 def error(msg) :
-    ircsock.send("PRIVMSG {} :\x02\x0305ERROR: {}\x03\x02\n".format(irc["channel"], msg))
+    try :
+        ircsock.send("PRIVMSG {} :\x02\x0305ERROR: {}\x03\x02\n".format(irc["channel"], msg))
+    except TypeError :
+        ircsock.send("PRIVMSG {} :\x02\x0305ERROR: {}\x03\x02\n".format(irc["channel"], msg).encode(encoding="UTF-8"))
 
 
 def join(chan) :
-    ircsock.send("JOIN {}\n".format(chan))
+    try :
+        ircsock.send("JOIN {}\n".format(chan))
+    except TypeError :
+        ircsock.send("JOIN {}\n".format(chan).encode(encoding="UTF-8"))
 
 
 def argumentor() :
@@ -171,8 +210,14 @@ irc = argumentor()
 # Connect to an IRC server    
 ircsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 ircsock.connect((irc["server"], int(irc["port"])))
-ircsock.send("USER {} {} {} :Homeworlds Bot\n".format(*[irc["botnick"]]*3))
-ircsock.send("NICK {}\n".format(irc["botnick"]))
+try :
+    # Works in Python 2.x
+    ircsock.send("USER {} {} {} :Homeworlds Bot\n".format(*[irc["botnick"]]*3))
+    ircsock.send("NICK {}\n".format(irc["botnick"]))
+except TypeError :
+    # Works in Python 3.x
+    ircsock.send("USER {} {} {} :Homeworlds Bot\n".format(*[irc["botnick"]]*3).encode(encoding="UTF-8"))
+    ircsock.send("NICK {}\n".format(irc["botnick"]).encode(encoding="UTF-8"))
 
 # Join the specified channel
 join(irc["channel"])
@@ -185,7 +230,8 @@ send("Hello, I am {} your personal Homeworlds Bot. To see a list of commands, ty
 while True :
 
     # Receive messages and remove unnecessary \n
-    ircmsg = ircsock.recv(2048).strip('\n\r')
+    ircmsg = ircsock.recv(2048).decode(encoding="UTF-8").strip('\n\r')
+    print(ircmsg)
     
     # Reply if the server pings you
     if ircmsg.find("PING :") != -1 :
