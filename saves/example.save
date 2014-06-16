@@ -10,3 +10,4 @@ game.players = {}
 game.colors = ('r', 'g', 'b', 'y')
 game.send_bag = []
 game.stashsize = 5
+game.turn = Philosoraptor
