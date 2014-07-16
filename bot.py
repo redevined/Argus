@@ -7,8 +7,75 @@ import socket, argparse
 import homeworlds
 
 
-# Functions for handling commands from irc messages
-def help(*args) :
+
+### Argument parser ###
+
+def parseArguments() :
+
+	# Build ArgumentParser for command-line arguments
+	parser = argparse.ArgumentParser(description = "Homeworlds IRC Bot")
+
+	# Command-line flags
+	parser.add_argument("-s", "--server", help = "Define the server the bot will connect to", default = "127.0.0.1")
+	parser.add_argument("-p", "--port", help = "Define the port the bot will connect to", default = "6667")
+	parser.add_argument("-c", "--channel", help = "Specify the channel the bot will join", default = "#homeworlds")
+	parser.add_argument("-n", "--botnick", help = "Choose a nickname for the bot", default = "Argus")
+	parser.add_argument("-i", "--indicator", help = "Set a character the bot will listen to", default = "@")
+	parser.add_argument("--no-color", help = "Disables colored outputs (Uses mIRC color codes by default)", action = "store_true")
+	parser.add_argument("--debug", help = "Enables debugging mode and shows messages from the IRC server", action = "store_true")
+	
+	# Parse arguments
+	args = parser.parse_args()
+	
+	# Return them as a dictionary
+	return vars(args)
+
+
+
+### Functions for basic IRC actions ###
+
+def ping() :
+	if irc["version"] == 3 :
+		ircsock.send("PONG :Pong\n".encode(encoding="UTF-8"))
+	else :
+		ircsock.send("PONG :Pong\n")
+
+
+def send(msg) :
+	if irc["version"] == 3 :
+		ircsock.send("PRIVMSG {} :{}{}{}\n".format(irc["channel"], ccsend, msg, ccsend_).encode(encoding="UTF-8"))
+	else :
+		ircsock.send("PRIVMSG {} :{}{}{}\n".format(irc["channel"], ccsend, msg, ccsend_))
+
+
+def error(msg) :
+	if irc["version"] == 3 :
+		ircsock.send("PRIVMSG {} :{}ERROR: {}{}\n".format(irc["channel"], ccerror, msg, ccerror_).encode(encoding="UTF-8"))
+	else :
+		ircsock.send("PRIVMSG {} :{}ERROR: {}{}\n".format(irc["channel"], ccerror, msg, ccerror_))
+
+
+def join() :
+	if irc["version"] == 3 :
+		ircsock.send("JOIN {}\n".format(irc["channel"]).encode(encoding="UTF-8"))
+	else :
+		ircsock.send("JOIN {}\n".format(irc["channel"]))
+
+
+def collect_msgs() :
+	for msg in game.collect_sends() :
+		if msg != ".init" :
+			send(msg)
+		else :
+			game.__init__()
+	for msg in game.collect_errors() :
+		error(msg)
+
+
+
+### Functions for handling commands from irc messages ###
+
+def help(*crap) :
 	manual = open(os.path.join("manual.txt"))
 	for line in manual :
 		send(line.replace("@", irc["indicator"]))
@@ -68,11 +135,11 @@ def waive(player, data) :
 		error("No game has been started by now")
 
 
-def board(*args) :
+def board(*crap) :
 	game.print_board()
 	
 	
-def stash(*args) :
+def stash(*crap) :
 	game.print_stash()
 	
 	
@@ -106,20 +173,25 @@ def load(player, data) :
 			# Set all variables of the game to the variables in the file
 			try :
 				exec(setting)
-			except Exception :
+			except Exception as fail :
 				error("Corrupt file")
+				if irc["debug"] :
+					print(fail)
 		savefile.close()
-		send("Game loaded, {} it's your turn.".format(variables["turn"]))
+		try :
+			send("Game loaded, {} it's your turn.".format(game.turn))
+		except AttributeError :
+			pass
 	except IOError :
 		error("There are no saved games with this name")
 
 
-def quit(player, data) :
+def reset(player, data) :
 	game.__init__()
 	send("{} left the game. The game has been resetted.".format(player))
 
 
-def debug(*args) :
+def debug(*crap) :
 	if irc["debug"] :
 		send("Entering debug mode...")
 		# Get and print current variables of the game
@@ -150,129 +222,73 @@ def debug(*args) :
 		error("Use the --debug flag to enable the use of the debug mode")
 
 
+### Main Code ###
 
-# Argument parser
-def argumentor() :
+def main(opts, server) :
 
-	# Build ArgumentParser for command-line arguments
-	parser = argparse.ArgumentParser(description = "Homeworlds IRC Bot")
-
-	# Command-line flags
-	parser.add_argument("-s", "--server", help = "Define the server the bot will connect to", default = "127.0.0.1")
-	parser.add_argument("-p", "--port", help = "Define the port the bot will connect to", default = "6667")
-	parser.add_argument("-c", "--channel", help = "Specify the channel the bot will join", default = "#homeworlds")
-	parser.add_argument("-n", "--botnick", help = "Choose a nickname for the bot", default = "Argus")
-	parser.add_argument("-i", "--indicator", help = "Set a character the bot will listen to", default = "@")
-	parser.add_argument("--no-color", help = "Disables colored outputs (Uses mIRC color codes by default)", action = "store_true")
-	parser.add_argument("--debug", help = "Enables debugging mode and shows messages from the IRC server", action = "store_true")
-	
-	# Parse arguments
-	args = parser.parse_args()
-	
-	# Return them as a dictionary
-	return vars(args)
-
-
-
-# Basic variables for the IRC connection
-irc = argumentor()
-irc["version"] = sys.version_info.major
-
-
-# Set the color codes for outputs
-if not irc["no_color"] :
-	ccsend, ccsend_, ccerror, ccerror_ = "\x0310", "\x03", "\x02\x0305", "\x03\x02"
-else :
-	ccsend, ccsend_, ccerror, ccerror_ = "", "", "", ""
-
-
-# Connect to an IRC server	  
-ircsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-ircsock.connect((irc["server"], int(irc["port"])))
-if irc["version"] == 3 :
-	# Works in Python 3.x
-	ircsock.send("USER {} {} {} :Homeworlds Bot\n".format(*[irc["botnick"]]*3).encode(encoding="UTF-8"))
-	ircsock.send("NICK {}\n".format(irc["botnick"]).encode(encoding="UTF-8"))
-else :
-	# Works in Python 2.x
-	ircsock.send("USER {} {} {} :Homeworlds Bot\n".format(*[irc["botnick"]]*3))
-	ircsock.send("NICK {}\n".format(irc["botnick"]))
-
-
-# Functions for basic IRC actions
-def ping() :
-	if irc["version"] == 3 :
-		ircsock.send("PONG :Pong\n".encode(encoding="UTF-8"))
-	else :
-		ircsock.send("PONG :Pong\n")
-
-
-def send(msg, chan = irc["channel"]) :
-	if irc["version"] == 3 :
-		ircsock.send("PRIVMSG {} :{}{}{}\n".format(chan, ccsend, msg, ccsend_).encode(encoding="UTF-8"))
-	else :
-		ircsock.send("PRIVMSG {} :{}{}{}\n".format(chan, ccsend, msg, ccsend_))
-
-
-def error(msg, chan = irc["channel"]) :
-	if irc["version"] == 3 :
-		ircsock.send("PRIVMSG {} :{}ERROR: {}{}\n".format(chan, ccerror, msg, ccerror_).encode(encoding="UTF-8"))
-	else :
-		ircsock.send("PRIVMSG {} :{}ERROR: {}{}\n".format(chan, ccerror, msg, ccerror_))
-
-
-def join(chan = irc["channel"]) :
-	if irc["version"] == 3 :
-		ircsock.send("JOIN {}\n".format(chan).encode(encoding="UTF-8"))
-	else :
-		ircsock.send("JOIN {}\n".format(chan))
-
-
-def collect_msgs() :
-	for msg in game.collect_sends() :
-		send(msg)
-	for msg in game.collect_errors() :
-		error(msg)
-
-
-# Join the specified channel
-join(irc["channel"])
-
-
-# Initialize the game
-game = homeworlds.Game()
-send("Hello, I am {} your personal Homeworlds Bot. To see a list of commands, type {}help.".format(irc["botnick"], irc["indicator"]))
-
-
-# Main loop
-while True :
-
-	# Receive messages and remove unnecessary \n
-	if irc["version"] == 3 :
+	# Connect to an IRC server
+	server.connect((opts["server"], int(opts["port"])))
+	if opts["version"] == 3 :
 		# Works in Python 3.x
-		ircmsg = ircsock.recv(2048).decode(encoding="UTF-8").strip('\n\r')
+		server.send("USER {} {} {} :Homeworlds Bot\n".format(*[opts["botnick"]]*3).encode(encoding="UTF-8"))
+		server.send("NICK {}\n".format(opts["botnick"]).encode(encoding="UTF-8"))
 	else :
 		# Works in Python 2.x
-		ircmsg = ircsock.recv(2048).strip('\n\r')
+		server.send("USER {} {} {} :Homeworlds Bot\n".format(*[opts["botnick"]]*3))
+		server.send("NICK {}\n".format(opts["botnick"]))
 	
-	if irc["debug"] :
-		print(ircmsg)
+	# Join the specified channel
+	join()
+	send("Hello, I am {} your personal Homeworlds Bot. To see a list of commands, type {}help.".format(opts["botnick"], opts["indicator"]))
+
+	# Main loop
+	while True :
+
+		# Receive messages and remove unnecessary \n
+		if opts["version"] == 3 :
+			# Works in Python 3.x
+			ircmsg = server.recv(2048).decode(encoding="UTF-8").strip('\n\r')
+		else :
+			# Works in Python 2.x
+			ircmsg = server.recv(2048).strip('\n\r')
 	
-	# Reply if the server pings you
-	if ircmsg.find("PING :") != -1 :
-		ping()
+		if opts["debug"] :
+			print(ircmsg)
 	
-	# If you find a message for you with a command in it
-	if ircmsg.find("PRIVMSG {} :{}".format(irc["channel"], irc["indicator"])) != -1 :
-		data = ircmsg.replace("!", ":").split(":")
-		user = data[1]
-		cmd = data[3].split(" ")
+		# Reply if the server pings you
+		if ircmsg.find("PING :") != -1 :
+			ping()
+	
+		# If you find a message for you with a command in it
+		if ircmsg.find("PRIVMSG {} :{}".format(opts["channel"], opts["indicator"])) != -1 :
+			data = ircmsg.replace("!", ":").split(":")
+			user = data[1]
+			cmd = data[3].split(" ")
 		
-		# Call the according function
-		#try :
-		eval(cmd[0][1:])(user, cmd[1:])
-		collect_msgs()
-		#except Exception :
-			#error("Unknown command or invalid arguments")
+			# Call the according function
+			try :
+				eval(cmd[0][1:])(user, cmd[1:])
+				collect_msgs()
+			except Exception as fail :
+				error("Unknown command or invalid arguments")
+				if opts["debug"] :
+					print(fail)
+
+
+
+if __name__ == "__main__" :
+	irc = parseArguments()
+	irc["version"] = sys.version_info.major
+
+	# Set the color codes for outputs
+	if not irc["no_color"] :
+		ccsend, ccsend_, ccerror, ccerror_ = "\x0310", "\x03", "\x02\x0305", "\x03\x02"
+	else :
+		ccsend, ccsend_, ccerror, ccerror_ = "", "", "", ""
+	
+	ircsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	game = homeworlds.Game()
+	
+	main(irc, ircsock)
 
 

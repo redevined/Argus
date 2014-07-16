@@ -159,7 +159,7 @@ class Game() :
 					self.send("Game finished: {} has won the game!".format(*self.winner))
 			
 				# Reinitialize the game
-				self.__init__()
+				self.send(".init")
 			
 			else :
 				self.send("{}, it's your turn.".format(self.turn))
@@ -503,16 +503,6 @@ class Game() :
 
 
 	def action_catastrophe(self, player, sysid) :
-	
-		# Shorten list names
-		try :
-			area_star = self.universe[sysid][0]
-			area_fleet = self.universe[sysid][self.players[player]]
-			area_opnfleet = self.universe[sysid][self.players[self.other(player)]]
-		except IndexError :
-			self.error("Star system not existing")
-			return None
-		
 		
 		# Generator that checks the system for possible catastrophes and yields the overpopulated colors
 		def check_overpopulation() :
@@ -541,7 +531,16 @@ class Game() :
 			# List comprehension removes overpopulated colors
 			self.universe[sysid] = [ [ element for element in self.universe[sysid][section] if stasher(overpop, element) ] for section in range(len(self.universe[sysid])) ]
 			self.send("A catastrophe has wiped out '{}' in system {}!".format(overpop, sysid))
-			
+	
+		# Shorten list names
+		try :
+			area_star = self.universe[sysid][0]
+			area_fleet = self.universe[sysid][self.players[player]]
+			area_opnfleet = self.universe[sysid][self.players[self.other(player)]]
+		except IndexError :
+			self.error("Star system not existing")
+			return None
+		
 		# If no star is left
 		if not area_star :
 		
@@ -556,7 +555,14 @@ class Game() :
 				
 				# Delete the star system
 				del(self.universe[sysid])
-			
+		
+		# Delete star system if it is left empty
+		elif not area_fleet and not area_opnfleet and len(area_star) == 1 :
+		
+			stashx, stashy = self.get_stash(*area_star)
+			self.stash[stashy][stashx] += 1
+			del(self.universe[sysid])
+		
 		# Don't change the turn, but print the board and check for finished game
 		self.next_turn(self.other(player))
 	
@@ -583,9 +589,16 @@ class Game() :
 			# Return sacrificed target to stash
 			stashx, stashy = self.get_stash(target)
 			self.stash[stashy][stashx] += 1
+			area_fleet.remove(target)
+			
+			# Delete star system if it is left empty
+			if not area_fleet and not area_opnfleet and len(area_star) == 1 :
+			
+				stashx, stashy = self.get_stash(*area_star)
+				self.stash[stashy][stashx] += 1
+				del(self.universe[sysid])
 			
 			self.send("You gain {} action(s).".format(self.actioncounter))
-			area_fleet.remove(target)
 
 
 

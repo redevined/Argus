@@ -4,7 +4,7 @@ General Commands:
 @start [Star] [Star] [Ship]         -           Join a new game with two Stars and a starter Ship. If you are the second player joining the game, the game starts afterwards.
 @save [Name]                        -           Save the current game under a specific name.
 @load [Name]                        -           Load a previously saved game.
-@quit                               -           Leave the current game. The game will be resetted.
+@reset                               -           Leave the current game. The game will be resetted.
 @debug                              -           Enter the debug mode. This lets you see and manipulate all variables of the game.
 
 In-Game Commands:
