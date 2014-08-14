@@ -64,10 +64,7 @@ def join() :
 
 def collect_msgs() :
 	for msg in game.collect_sends() :
-		if msg != ".init" :
-			send(msg)
-		else :
-			game.__init__()
+		send(msg)
 	for msg in game.collect_errors() :
 		error(msg)
 

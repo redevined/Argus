@@ -91,18 +91,9 @@ class Game() :
 	
 		self.send("=======================================")
 		
-		# Print every system line by line
-		for i in range(len(self.universe)) :
-		
-			# The 'strings' are the strings of stars and both players ships in the system
-			unistrings = {}
-			
-			for div in range(3) :
-				# Format the system so it can be easily printed
-				unistrings[div] = str(self.universe[i][div]).replace("[", "").replace("]", "").replace(",", "").replace("'", "")
-				
-			# Print current system
-			self.send("{}:      {} < {} > {}".format(i, unistrings[1], unistrings[0], unistrings[2]))
+		templates = map( lambda sys : "{1} < {0} > {2}".format(*sys) , map( lambda sys : map( lambda sec : " ".join(sec) , sys ) , self.universe ) )
+		board = "\n".join([ "{}:           {}".format(i, templates[i]) for i in range(len(templates)) ])
+		self.send(board)
 
 		self.send("=======================================")
 		
@@ -112,11 +103,15 @@ class Game() :
 	
 		# Print the current stash
 		self.send("=======================================")
-		self.send("              s m l")
-		self.send("Red:          {} {} {}".format(*self.stash[0]))
-		self.send("Green:        {} {} {}".format(*self.stash[1]))
-		self.send("Blue:         {} {} {}".format(*self.stash[2]))
-		self.send("Yellow:       {} {} {}".format(*self.stash[3]))
+		
+		stack = """              S M L
+		Red:          {} {} {}
+		Green:        {} {} {}
+		Blue:         {} {} {}
+		Yellow:       {} {} {}
+		""".format(*self.stash)
+		self.send(stack)
+		
 		self.send("=======================================")
 	
 
@@ -158,8 +153,8 @@ class Game() :
 				else :
 					self.send("Game finished: {} has won the game!".format(*self.winner))
 			
-				# Reinitialize the game
-				self.send(".init")
+				# Stop the game
+				self.run = False
 			
 			else :
 				self.send("{}, it's your turn.".format(self.turn))
